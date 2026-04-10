@@ -1,0 +1,78 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // ── Backend — auto-opens Swagger in browser when ready ────────────────
+    {
+      "name": "🖥  Backend API (Swagger auto-opens)",
+      "type": "dotnet",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/backend",
+      "projectPath": "${workspaceFolder}/backend/src/NoteApp.API/NoteApp.API.csproj",
+      "launchSettingsProfile": "https",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:5001;http://localhost:5000"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "Now listening on: (https://\\S+)",
+        "uriFormat": "https://localhost:5001/swagger"
+      }
+    },
+
+    // ── Frontend — React Native (requires Metro running) ──────────────────
+    {
+      "name": "📱 Frontend — Android",
+      "type": "reactnative",
+      "request": "launch",
+      "platform": "android",
+      "cwd": "${workspaceFolder}/frontend/NoteAppMobile",
+      "env": { "RCT_METRO_PORT": "8081" },
+      "preLaunchTask": "frontend: start Metro"
+    },
+    {
+      "name": "📱 Frontend — iOS",
+      "type": "reactnative",
+      "request": "launch",
+      "platform": "ios",
+      "cwd": "${workspaceFolder}/frontend/NoteAppMobile",
+      "env": { "RCT_METRO_PORT": "8081" },
+      "preLaunchTask": "frontend: start Metro"
+    },
+
+    // ── Metro only — just start bundler, attach device separately ─────────
+    {
+      "name": "📱 Start Metro Only (:8081)",
+      "type": "reactnative",
+      "request": "launch",
+      "platform": "metro",
+      "cwd": "${workspaceFolder}/frontend/NoteAppMobile",
+      "env": { "RCT_METRO_PORT": "8081" }
+    }
+  ],
+
+  // ── Single-click: starts BOTH backend (Swagger) + Metro in separate tabs
+  "compounds": [
+    {
+      "name": "🚀 Full Stack — Backend (Swagger) + Metro",
+      "configurations": [
+        "🖥  Backend API (Swagger auto-opens)",
+        "📱 Start Metro Only (:8081)"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "",
+        "order": 1
+      }
+    },
+    {
+      "name": "🚀 Full Stack — Backend + Android",
+      "configurations": [
+        "🖥  Backend API (Swagger auto-opens)",
+        "📱 Frontend — Android"
+      ],
+      "stopAll": true
+    }
+  ]
+}

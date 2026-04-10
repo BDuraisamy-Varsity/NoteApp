@@ -1,0 +1,128 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    // ── Backend ──────────────────────────────────────────────────────────
+    {
+      "label": "backend: build",
+      "type": "shell",
+      "command": "dotnet build NoteApp.sln /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary",
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "group": "build"
+      }
+    },
+    {
+      "label": "backend: start API",
+      "type": "shell",
+      "command": "dotnet run --project src/NoteApp.API/NoteApp.API.csproj --launch-profile https",
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "isBackground": true,
+      "dependsOn": ["backend: build"],
+      "problemMatcher": {
+        "owner": "dotnet",
+        "pattern": [{ "regexp": ".", "file": 1, "location": 2, "message": 3 }],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Building\\.\\.\\.",
+          "endsPattern": "Now listening on:"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "servers",
+        "tab": "🖥  Backend API (:5001)"
+      }
+    },
+
+    // ── Frontend ─────────────────────────────────────────────────────────
+    {
+      "label": "frontend: install",
+      "type": "shell",
+      "command": "npm install",
+      "options": { "cwd": "${workspaceFolder}/frontend/NoteAppMobile" },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "group": "build"
+      }
+    },
+    {
+      "label": "frontend: start Metro",
+      "type": "shell",
+      "command": "npx react-native start --port 8081 --reset-cache",
+      "options": { "cwd": "${workspaceFolder}/frontend/NoteAppMobile" },
+      "isBackground": true,
+      "dependsOn": ["frontend: install"],
+      "problemMatcher": {
+        "owner": "metro",
+        "pattern": [{ "regexp": ".", "file": 1, "location": 2, "message": 3 }],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Starting Metro Bundler",
+          "endsPattern": "BUNDLE.*main\\.jsbundle|Metro waiting on"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "servers",
+        "tab": "📱 Metro (:8081)"
+      }
+    },
+
+    // ── Full Stack ────────────────────────────────────────────────────────
+    {
+      "label": "🚀 Start Full Stack",
+      "dependsOn": ["backend: start API", "frontend: start Metro"],
+      "dependsOrder": "parallel",
+      "group": { "kind": "build", "isDefault": false },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+
+    // ── Tests ─────────────────────────────────────────────────────────────
+    {
+      "label": "backend: test with coverage",
+      "type": "shell",
+      "command": "dotnet test NoteApp.sln --collect:\"XPlat Code Coverage\" --logger trx --results-directory coverage",
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "test", "isDefault": true },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "tests",
+        "tab": "🧪 Tests"
+      }
+    },
+
+    // ── Migrations ────────────────────────────────────────────────────────
+    {
+      "label": "backend: add migration",
+      "type": "shell",
+      "command": "dotnet ef migrations add ${input:migrationName} --project src/NoteApp.Infrastructure/NoteApp.Infrastructure.csproj --startup-project src/NoteApp.API/NoteApp.API.csproj",
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "tab": "⚙  Migrations"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "migrationName",
+      "type": "promptString",
+      "description": "Migration name (e.g. AddTagsToNotes_20250410)",
+      "default": "Migration_"
+    }
+  ]
+}
