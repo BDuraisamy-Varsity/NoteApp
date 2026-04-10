@@ -1,15 +1,11 @@
 import React, {useState} from 'react';
-import {
-  Animated,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {useAccessibility} from '../contexts/AccessibilityContext';
+import {useFlagContext} from '../contexts/FlagContext';
 import {useTheme} from '../contexts/ThemeContext';
 import {NoteDto} from '../services/api';
 import {borderRadius, MIN_TOUCH_TARGET, shadow, spacing} from '../theme/spacing';
+import {getFlagConfig} from '../theme/flags';
 
 interface NoteCardProps {
   note: NoteDto;
@@ -29,7 +25,9 @@ const TAG_COLORS = [
 export default function NoteCard({note, onPress, onEdit, onDelete}: NoteCardProps) {
   const {colors} = useTheme();
   const {typography} = useAccessibility();
+  const {flagConfigs} = useFlagContext();
   const [menuOpen, setMenuOpen] = useState(false);
+  const flagCfg = getFlagConfig(flagConfigs, (note.flag ?? 'None') as any);
 
   const styles = buildStyles(colors, typography);
   const preview = note.body.replace(/\n+/g, ' ').trim().slice(0, 100);
@@ -45,8 +43,8 @@ export default function NoteCard({note, onPress, onEdit, onDelete}: NoteCardProp
         accessibilityLabel={`Note: ${note.title}`}
         activeOpacity={0.7}>
 
-        {/* Accent bar */}
-        <View style={styles.accentBar} />
+        {/* Accent bar — color-coded by flag */}
+        <View style={[styles.accentBar, {backgroundColor: note.flag && note.flag !== 'None' ? flagCfg.color : colors.primary}]} />
 
         <View style={styles.cardContent}>
           {/* Header row */}
@@ -90,11 +88,15 @@ export default function NoteCard({note, onPress, onEdit, onDelete}: NoteCardProp
           <View style={styles.footer}>
             <Text style={styles.date}>{formattedDate}</Text>
             <View style={styles.footerRight}>
-              {note.todoItems.length > 0 && (
+              {note.flag && note.flag !== 'None' && (
+                <View style={[styles.flagBadge, {backgroundColor: flagCfg.color}]}>
+                  <Text style={styles.flagEmoji}>{flagCfg.emoji}</Text>
+                  <Text style={[styles.flagBadgeText, {color: flagCfg.textColor}]}>{flagCfg.label}</Text>
+                </View>
+              )}
+                      {note.todoItems.length > 0 && (
                 <View style={styles.todoBadge}>
-                  <Text style={styles.todoBadgeText}>
-                    ✓ {completedCount}/{note.todoItems.length}
-                  </Text>
+                  <Text style={styles.todoBadgeText}>✓ {completedCount}/{note.todoItems.length}</Text>
                 </View>
               )}
             </View>
@@ -245,6 +247,16 @@ function buildStyles(
       alignItems: 'center',
       gap: spacing.sm,
     },
+    flagBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRadius: borderRadius.full,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      gap: 3,
+    },
+    flagEmoji: { fontSize: 11 },
+    flagBadgeText: { fontSize: typography.xs, fontWeight: '700' },
     todoBadge: {
       backgroundColor: colors.primaryLight,
       borderRadius: borderRadius.full,

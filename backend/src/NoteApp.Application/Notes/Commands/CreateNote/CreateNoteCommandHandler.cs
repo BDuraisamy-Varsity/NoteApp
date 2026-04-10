@@ -39,6 +39,7 @@ public class CreateNoteCommandHandler : IRequestHandler<CreateNoteCommand, NoteD
         {
             Title = request.Title,
             Body = request.Body,
+            Flag = request.Flag,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };

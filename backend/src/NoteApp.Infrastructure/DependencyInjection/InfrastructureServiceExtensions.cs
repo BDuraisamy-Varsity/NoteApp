@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NoteApp.Domain.Interfaces;
 using NoteApp.Infrastructure.Data;
 using NoteApp.Infrastructure.Data.Repositories;
+using NoteApp.Infrastructure.Security;
 
 namespace NoteApp.Infrastructure.DependencyInjection;
 
@@ -18,6 +19,7 @@ public static class InfrastructureServiceExtensions
                 ?? "Data Source=noteapp.db"));
 
         services.AddScoped<INoteRepository, NoteRepository>();
+        services.AddSingleton<IPiiEncryptionService, PiiEncryptionService>();
 
         return services;
     }

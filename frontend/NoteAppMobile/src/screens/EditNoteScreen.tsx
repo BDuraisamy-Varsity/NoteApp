@@ -9,9 +9,11 @@ import {
   View,
 } from 'react-native';
 import {useAccessibility} from '../contexts/AccessibilityContext';
+import {useFlagContext} from '../contexts/FlagContext';
 import {useTheme} from '../contexts/ThemeContext';
-import {CreateNoteRequest, NoteDto, UpdateNoteRequest, notesApi} from '../services/api';
+import {CreateNoteRequest, FlagLevel, NoteDto, UpdateNoteRequest, notesApi} from '../services/api';
 import {borderRadius, MIN_TOUCH_TARGET, spacing} from '../theme/spacing';
+import {FLAG_ORDER, getFlagConfig, autoDetectFlag} from '../theme/flags';
 
 interface EditNoteScreenProps {
   note?: NoteDto;          // if provided → edit mode, else → create mode
@@ -23,10 +25,12 @@ interface EditNoteScreenProps {
 export default function EditNoteScreen({note, onSave, onCancel, onDelete}: EditNoteScreenProps) {
   const {colors} = useTheme();
   const {typography} = useAccessibility();
+  const {flagConfigs} = useFlagContext();
   const isEditMode = !!note;
 
   const [title, setTitle] = useState(note?.title ?? '');
   const [body, setBody] = useState(note?.body ?? '');
+  const [flag, setFlag] = useState<FlagLevel>(note?.flag ?? 'None');
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +49,7 @@ export default function EditNoteScreen({note, onSave, onCancel, onDelete}: EditN
           id: note.id,
           title: title.trim(),
           body: body.trim(),
+          flag,
           tags: note.tags,
           todoItems: note.todoItems,
         };
@@ -53,6 +58,7 @@ export default function EditNoteScreen({note, onSave, onCancel, onDelete}: EditN
         const req: CreateNoteRequest = {
           title: title.trim(),
           body: body.trim(),
+          flag,
           tags: [],
           todoItems: [],
         };
@@ -142,6 +148,41 @@ export default function EditNoteScreen({note, onSave, onCancel, onDelete}: EditN
             returnKeyType="next"
             maxLength={200}
           />
+
+          <View style={styles.divider} />
+
+          {/* Flag selector */}
+          <View style={styles.flagSection}>
+            <View style={styles.flagHeader}>
+              <Text style={styles.flagSectionLabel}>Priority flag</Text>
+              <TouchableOpacity
+                onPress={() => setFlag(autoDetectFlag(title, body) as FlagLevel)}
+                accessibilityRole="button"
+                accessibilityLabel="Auto-detect flag from content">
+                <Text style={styles.autoDetectBtn}>✨ Auto-detect</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.flagPicker}>
+              {FLAG_ORDER.map(level => {
+                const cfg = getFlagConfig(flagConfigs, level as any);
+                const isActive = flag === level;
+                return (
+                  <TouchableOpacity
+                    key={level}
+                    style={[styles.flagOption, {borderColor: cfg.color}, isActive && {backgroundColor: cfg.color}]}
+                    onPress={() => setFlag(level as FlagLevel)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Set flag to ${cfg.label}`}
+                    accessibilityState={{selected: isActive}}>
+                    <Text style={styles.flagOptionEmoji}>{cfg.emoji}</Text>
+                    <Text style={[styles.flagOptionLabel, isActive && {color: cfg.textColor}]}>
+                      {cfg.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
 
           <View style={styles.divider} />
 
@@ -324,6 +365,20 @@ function buildStyles(
       minHeight: 240,
       paddingVertical: spacing.sm,
     },
+
+    // Flag selector
+    flagSection: { marginVertical: spacing.sm },
+    flagHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
+    flagSectionLabel: { fontSize: typography.sm, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+    autoDetectBtn: { fontSize: typography.sm, color: colors.primary, fontWeight: '600' },
+    flagPicker: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+    flagOption: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      borderWidth: 1.5, borderRadius: borderRadius.full,
+      paddingHorizontal: spacing.sm, paddingVertical: 6,
+    },
+    flagOptionEmoji: { fontSize: 13 },
+    flagOptionLabel: { fontSize: typography.xs, fontWeight: '600', color: colors.textSecondary },
 
     // Metadata
     metaRow: {

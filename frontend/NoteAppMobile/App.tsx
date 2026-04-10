@@ -3,18 +3,22 @@ import {StatusBar} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {AccessibilityProvider} from './src/contexts/AccessibilityContext';
 import {ThemeProvider, useTheme} from './src/contexts/ThemeContext';
+import {FlagProvider} from './src/contexts/FlagContext';
 import EditNoteScreen from './src/screens/EditNoteScreen';
+import FlagsSettingsScreen from './src/screens/FlagsSettingsScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import {NoteDto} from './src/services/api';
 
-type Screen = 'home' | 'create' | 'edit';
+type Screen = 'home' | 'create' | 'edit' | 'settings';
 
 export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
         <AccessibilityProvider>
-          <Shell />
+          <FlagProvider>
+            <Shell />
+          </FlagProvider>
         </AccessibilityProvider>
       </ThemeProvider>
     </SafeAreaProvider>
@@ -33,6 +37,15 @@ function Shell() {
     setScreen('home');
     setEditingNote(undefined);
   };
+
+  if (screen === 'settings') {
+    return (
+      <>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.headerBackground} />
+        <FlagsSettingsScreen onBack={goHome} />
+      </>
+    );
+  }
 
   if (screen === 'create' || screen === 'edit') {
     return (
@@ -57,6 +70,7 @@ function Shell() {
         onCreatePress={() => { setEditingNote(undefined); setScreen('create'); }}
         onEditPress={note => { setEditingNote(note); setScreen('edit'); }}
         onDeletePress={note => { setEditingNote(note); setScreen('edit'); }}
+        onSettingsPress={() => setScreen('settings')}
       />
     </>
   );

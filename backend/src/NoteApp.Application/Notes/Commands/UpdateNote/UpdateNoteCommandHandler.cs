@@ -40,6 +40,7 @@ public class UpdateNoteCommandHandler : IRequestHandler<UpdateNoteCommand, NoteD
     {
         note.Title = request.Title;
         note.Body = request.Body;
+        note.Flag = request.Flag;
         note.UpdatedAt = DateTime.UtcNow;
         note.NoteTags = request.Tags
             .Where(t => !string.IsNullOrWhiteSpace(t))

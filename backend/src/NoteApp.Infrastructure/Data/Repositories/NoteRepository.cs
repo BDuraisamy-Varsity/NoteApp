@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NoteApp.Domain.Entities;
 using NoteApp.Domain.Interfaces;
+using NoteApp.Infrastructure.Security;
 
 namespace NoteApp.Infrastructure.Data.Repositories;
 
@@ -38,6 +39,16 @@ public class NoteRepository : INoteRepository
             .Include(n => n.TodoItems)
             .Where(n => n.Title.ToLower().Contains(lowerKeyword)
                      || n.Body.ToLower().Contains(lowerKeyword))
+            .OrderByDescending(n => n.UpdatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Note>> GetByFlagAsync(FlagLevel flag, CancellationToken cancellationToken = default)
+    {
+        return await _context.Notes
+            .Include(n => n.NoteTags).ThenInclude(nt => nt.Tag)
+            .Include(n => n.TodoItems)
+            .Where(n => n.Flag == flag)
             .OrderByDescending(n => n.UpdatedAt)
             .ToListAsync(cancellationToken);
     }

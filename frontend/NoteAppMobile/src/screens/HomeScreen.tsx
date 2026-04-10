@@ -12,16 +12,19 @@ import {
 } from 'react-native';
 import {useAccessibility} from '../contexts/AccessibilityContext';
 import {ThemeMode, useTheme} from '../contexts/ThemeContext';
+import {useFlagContext} from '../contexts/FlagContext';
+import {FLAG_ORDER, getFlagConfig} from '../theme/flags';
 import {FontSizeLevel} from '../theme/typography';
 import {NoteDto, notesApi} from '../services/api';
 import {borderRadius, MIN_TOUCH_TARGET, shadow, spacing} from '../theme/spacing';
 import NoteCard from '../components/NoteCard';
 
 interface HomeScreenProps {
-  onNotePress:   (note: NoteDto) => void;
-  onCreatePress: () => void;
-  onEditPress:   (note: NoteDto) => void;
-  onDeletePress: (note: NoteDto) => void;
+  onNotePress:    (note: NoteDto) => void;
+  onCreatePress:  () => void;
+  onEditPress:    (note: NoteDto) => void;
+  onDeletePress:  (note: NoteDto) => void;
+  onSettingsPress: () => void;
 }
 
 const THEME_OPTS: {mode: ThemeMode; icon: string; label: string}[] = [
@@ -44,15 +47,17 @@ function greeting(): string {
   return 'Good evening 🌙';
 }
 
-export default function HomeScreen({onNotePress, onCreatePress, onEditPress, onDeletePress}: HomeScreenProps) {
+export default function HomeScreen({onNotePress, onCreatePress, onEditPress, onDeletePress, onSettingsPress}: HomeScreenProps) {
   const {colors, themeMode, setTheme, isDark} = useTheme();
   const {typography, fontSizeLevel, setFontSizeLevel} = useAccessibility();
+  const {flagConfigs} = useFlagContext();
   const {width} = useWindowDimensions();
 
   const [notes, setNotes]             = useState<NoteDto[]>([]);
   const [filtered, setFiltered]       = useState<NoteDto[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTag, setActiveTag]     = useState<string | null>(null);
+  const [activeFlag, setActiveFlag]   = useState<string | null>(null);
   const [isLoading, setIsLoading]     = useState(false);
   const [error, setError]             = useState<string | null>(null);
 
@@ -78,9 +83,10 @@ export default function HomeScreen({onNotePress, onCreatePress, onEditPress, onD
   // Collect all unique tags across notes
   const allTags = Array.from(new Set(notes.flatMap(n => n.tags)));
 
-  const applyFilter = useCallback((query: string, tag: string | null, all: NoteDto[]) => {
+  const applyFilter = useCallback((query: string, tag: string | null, flag: string | null, all: NoteDto[]) => {
     let result = all;
-    if (tag) { result = result.filter(n => n.tags.includes(tag)); }
+    if (tag)  { result = result.filter(n => n.tags.includes(tag)); }
+    if (flag) { result = result.filter(n => (n.flag ?? 'None') === flag); }
     if (query.trim()) { result = result.filter(n =>
       n.title.toLowerCase().includes(query.toLowerCase()) ||
       n.body.toLowerCase().includes(query.toLowerCase()),
@@ -90,7 +96,7 @@ export default function HomeScreen({onNotePress, onCreatePress, onEditPress, onD
 
   const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query);
-    if (query.trim().length === 0 && !activeTag) {
+    if (query.trim().length === 0 && !activeTag && !activeFlag) {
       setFiltered(notes);
       return;
     }
@@ -100,13 +106,18 @@ export default function HomeScreen({onNotePress, onCreatePress, onEditPress, onD
         setFiltered(results);
       } catch { setError('Search failed.'); }
     } else {
-      applyFilter(query, activeTag, notes);
+      applyFilter(query, activeTag, activeFlag, notes);
     }
   }, [notes, activeTag, applyFilter]);
 
   const handleTagFilter = (tag: string | null) => {
     setActiveTag(tag);
-    applyFilter(searchQuery, tag, notes);
+    applyFilter(searchQuery, tag, activeFlag, notes);
+  };
+
+  const handleFlagFilter = (flag: string | null) => {
+    setActiveFlag(flag);
+    applyFilter(searchQuery, activeTag, flag, notes);
   };
 
   const s = buildStyles(colors, typography, isDark);
@@ -175,6 +186,9 @@ export default function HomeScreen({onNotePress, onCreatePress, onEditPress, onD
           <Text style={s.statLbl}>With todos</Text>
         </View>
         <View style={{flex: 1}} />
+        <TouchableOpacity style={s.settingsBtn} onPress={onSettingsPress} accessibilityRole="button" accessibilityLabel="Flag settings">
+          <Text style={s.settingsBtnIcon}>🏷️</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={s.newBtn} onPress={onCreatePress} accessibilityRole="button" accessibilityLabel="New note">
           <Text style={s.newBtnText}>+ New</Text>
         </TouchableOpacity>
@@ -234,10 +248,43 @@ export default function HomeScreen({onNotePress, onCreatePress, onEditPress, onD
         </ScrollView>
       )}
 
+      {/* ── Flag filter chips ────────────────── */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={s.chipsRow}
+        style={s.chipsScroll}>
+        <TouchableOpacity
+          style={[s.chip, !activeFlag && s.chipActive]}
+          onPress={() => handleFlagFilter(null)}
+          accessibilityRole="button"
+          accessibilityLabel="All flags"
+          accessibilityState={{selected: !activeFlag}}>
+          <Text style={[s.chipText, !activeFlag && s.chipTextActive]}>All flags</Text>
+        </TouchableOpacity>
+        {FLAG_ORDER.filter(f => f !== 'None').map(level => {
+          const cfg = getFlagConfig(flagConfigs, level as any);
+          const isActive = activeFlag === level;
+          return (
+            <TouchableOpacity
+              key={level}
+              style={[s.chip, isActive && {backgroundColor: cfg.color, borderColor: cfg.color}]}
+              onPress={() => handleFlagFilter(level)}
+              accessibilityRole="button"
+              accessibilityLabel={`Filter by ${cfg.label}`}
+              accessibilityState={{selected: isActive}}>
+              <Text style={[s.chipText, isActive && {color: cfg.textColor}]}>
+                {cfg.emoji} {cfg.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
       {/* ── Section label ────────────────────── */}
       <View style={s.sectionRow}>
         <Text style={s.sectionTitle}>
-          {searchQuery ? `Results for "${searchQuery}"` : activeTag ? `#${activeTag}` : 'Recent'}
+          {searchQuery ? `Results for "${searchQuery}"` : activeTag ? `#${activeTag}` : activeFlag ? activeFlag : 'Recent'}
         </Text>
         <Text style={s.sectionCount}>{filtered.length}</Text>
       </View>
@@ -400,6 +447,13 @@ function buildStyles(
     statNum:  { fontSize: typography.xl, fontWeight: '800', color: '#FFFFFF' },
     statLbl:  { fontSize: typography.xs, color: 'rgba(255,255,255,0.65)', marginTop: 1 },
     statDivider: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.2)' },
+    settingsBtn: {
+      width: 36, height: 36,
+      borderRadius: borderRadius.full,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      alignItems: 'center', justifyContent: 'center',
+    },
+    settingsBtnIcon: { fontSize: 18 },
     newBtn: {
       backgroundColor: colors.accent,
       paddingHorizontal: spacing.md,

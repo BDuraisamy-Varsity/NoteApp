@@ -8,7 +8,9 @@ using NoteApp.Application.Notes.Commands.UpdateNote;
 using NoteApp.Application.Notes.Queries.GetAllNotes;
 using NoteApp.Application.Notes.Queries.GetNoteById;
 using NoteApp.Application.Notes.Queries.GetNotesByTag;
+using NoteApp.Application.Notes.Queries.GetNotesByFlag;
 using NoteApp.Application.Notes.Queries.SearchNotes;
+using NoteApp.Domain.Entities;
 
 namespace NoteApp.API.Controllers.v1;
 
@@ -59,6 +61,15 @@ public class NotesController : ControllerBase
     public async Task<IActionResult> GetByTag(string tagName, CancellationToken cancellationToken)
     {
         var notes = await _mediator.Send(new GetNotesByTagQuery(tagName), cancellationToken);
+        return Ok(notes);
+    }
+
+    /// <summary>Gets notes filtered by flag/priority level.</summary>
+    [HttpGet("flags/{flag}")]
+    [ProducesResponseType(typeof(IEnumerable<NoteDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetByFlag(FlagLevel flag, CancellationToken cancellationToken)
+    {
+        var notes = await _mediator.Send(new GetNotesByFlagQuery(flag), cancellationToken);
         return Ok(notes);
     }
 

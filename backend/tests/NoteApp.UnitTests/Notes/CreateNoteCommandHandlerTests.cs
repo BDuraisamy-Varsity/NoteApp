@@ -28,7 +28,7 @@ public class CreateNoteCommandHandlerTests
     public async Task Handle_ValidCommand_ReturnsCreatedNoteDto()
     {
         // Arrange
-        var command = new CreateNoteCommand("Test Title", "Test Body", ["work"], ["Buy milk"]);
+        var command = new CreateNoteCommand("Test Title", "Test Body", FlagLevel.None, ["work"], ["Buy milk"]);
         var expectedDto = new NoteDto { Id = Guid.NewGuid(), Title = "Test Title", Body = "Test Body" };
         _mapperMock.Setup(m => m.Map<NoteDto>(It.IsAny<Note>())).Returns(expectedDto);
 
@@ -44,7 +44,7 @@ public class CreateNoteCommandHandlerTests
     public async Task Handle_ValidCommand_CallsRepositoryAddAsync()
     {
         // Arrange
-        var command = new CreateNoteCommand("Title", "Body", [], []);
+        var command = new CreateNoteCommand("Title", "Body", FlagLevel.None, [], []);
         _mapperMock.Setup(m => m.Map<NoteDto>(It.IsAny<Note>())).Returns(new NoteDto());
 
         // Act
@@ -58,7 +58,7 @@ public class CreateNoteCommandHandlerTests
     public async Task Handle_CommandWithEmptyTitle_StillCallsRepository()
     {
         // Arrange
-        var command = new CreateNoteCommand("", "Body", [], []);
+        var command = new CreateNoteCommand("", "Body", FlagLevel.None, [], []);
         _mapperMock.Setup(m => m.Map<NoteDto>(It.IsAny<Note>())).Returns(new NoteDto());
 
         // Act
@@ -78,7 +78,7 @@ public class CreateNoteCommandHandlerTests
             .Callback<Note, CancellationToken>((note, _) => capturedNote = note);
         _mapperMock.Setup(m => m.Map<NoteDto>(It.IsAny<Note>())).Returns(new NoteDto());
 
-        var command = new CreateNoteCommand("Title", "Body", ["work", "personal"], []);
+        var command = new CreateNoteCommand("Title", "Body", FlagLevel.High, ["work", "personal"], []);
 
         // Act
         await _handler.Handle(command, CancellationToken.None);
@@ -86,5 +86,6 @@ public class CreateNoteCommandHandlerTests
         // Assert
         capturedNote!.NoteTags.Should().HaveCount(2);
         capturedNote.NoteTags.Select(nt => nt.Tag.Name).Should().Contain("work").And.Contain("personal");
+        capturedNote.Flag.Should().Be(FlagLevel.High);
     }
 }

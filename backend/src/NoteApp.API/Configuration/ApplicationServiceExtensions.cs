@@ -1,4 +1,5 @@
 using AutoMapper;
+using FluentValidation;
 using NoteApp.Application.Behaviors;
 using NoteApp.Application.Mappings;
 
@@ -12,8 +13,10 @@ public static class ApplicationServiceExtensions
         {
             cfg.RegisterServicesFromAssembly(typeof(NoteProfile).Assembly);
             cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
+            cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
         });
 
+        services.AddValidatorsFromAssembly(typeof(NoteProfile).Assembly);
         RegisterAutoMapper(services);
 
         return services;

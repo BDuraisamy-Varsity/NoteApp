@@ -3,12 +3,15 @@
 
 const BASE_URL = 'http://localhost:5000/api/v1';
 
+export type FlagLevel = 'None' | 'Low' | 'Normal' | 'Important' | 'High' | 'Critical';
+
 export interface NoteDto {
   id: string;
   title: string;
   body: string;
   createdAt: string;
   updatedAt: string;
+  flag: FlagLevel;
   tags: string[];
   todoItems: TodoItemDto[];
 }
@@ -23,6 +26,7 @@ export interface TodoItemDto {
 export interface CreateNoteRequest {
   title: string;
   body: string;
+  flag: FlagLevel;
   tags: string[];
   todoItems: string[];
 }
@@ -31,6 +35,7 @@ export interface UpdateNoteRequest {
   id: string;
   title: string;
   body: string;
+  flag: FlagLevel;
   tags: string[];
   todoItems: TodoItemDto[];
 }
@@ -88,6 +93,11 @@ export const notesApi = {
       `${BASE_URL}/notes/tags/${encodeURIComponent(tag)}`,
       {headers: buildHeaders()},
     );
+    return handleResponse<NoteDto[]>(res);
+  },
+
+  getByFlag: async (flag: FlagLevel): Promise<NoteDto[]> => {
+    const res = await fetch(`${BASE_URL}/notes/flags/${flag}`, {headers: buildHeaders()});
     return handleResponse<NoteDto[]>(res);
   },
 
