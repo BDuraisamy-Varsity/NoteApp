@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx webpack:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet run:*)",
+      "Bash(curl:*)",
+      "Bash(npm run:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(npx jest:*)",
+      "WebFetch(domain:www.figma.com)",
+      "Bash(dotnet add:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Skill(claude-api)",
+      "Bash(dotnet restore:*)",
+      "Bash(cat \"C:\\\\\\\\Users\\\\\\\\b.duraisamy\\\\\\\\NoteApp\\\\\\\\backend\\\\\\\\src\\\\\\\\NoteApp.Infrastructure\\\\\\\\obj\\\\\\\\Debug\\\\\\\\net10.0\\\\\\\\Anthropic.Generators\\\\\\\\Anthropic.Generators.AnthropicToolsGenerator\\\\\\\\INoteAgentTools.Calls.generated.cs\")",
+      "Bash(taskkill:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(powershell.exe:*)",
+      "Bash(dotnet ef:*)"
+    ]
+  }
+}

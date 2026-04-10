@@ -39,7 +39,10 @@ frontend/NoteAppMobile/.bundle/
 .env.local
 .env.*.local
 appsettings.Production.json
+appsettings.Development.json
+appsettings.*.local.json
 secrets.json
+.claude/
 
 # ── OS ─────────────────────────────────────────────────────────────────────
 .DS_Store
