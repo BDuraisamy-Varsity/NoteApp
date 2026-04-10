@@ -6,7 +6,7 @@
       "name": "🖥  Backend API (Swagger auto-opens)",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "build",
+      "preLaunchTask": "backend: build",
       "program": "${workspaceFolder}/backend/src/NoteApp.API/bin/Debug/net10.0/NoteApp.API.dll",
       "args": [],
       "cwd": "${workspaceFolder}/backend/src/NoteApp.API",

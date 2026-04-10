@@ -66,11 +66,11 @@ if (app.Environment.IsDevelopment())
 
 app.MapControllers();
 
-// ── Ensure DB created on startup ──────────────────────────────────────────
+// ── Apply EF Core migrations on startup ───────────────────────────────────
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<NoteApp.Infrastructure.Data.NoteDbContext>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
 }
 
 app.Run();
