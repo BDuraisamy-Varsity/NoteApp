@@ -42,7 +42,7 @@ public class ClaudeAIService : IClaudeAIService
             model: Model,
             messages: [prompt],
             maxTokens: 256,
-            topP: null,
+            temperature: 1.0,
             cancellationToken: cancellationToken);
 
         var raw = ExtractText(response).Trim();
@@ -76,7 +76,7 @@ public class ClaudeAIService : IClaudeAIService
             model: Model,
             messages: [prompt],
             maxTokens: 256,
-            topP: null,
+            temperature: 1.0,
             cancellationToken: cancellationToken);
 
         var summary = ExtractText(response).Trim();
@@ -105,7 +105,7 @@ public class ClaudeAIService : IClaudeAIService
                 system: SystemPromptAgent,
                 toolChoice: new ToolChoice { Type = ToolChoiceType.Auto },
                 tools: tools,
-                topP: null,
+                temperature: 1.0,
                 cancellationToken: cancellationToken);
 
             messages.Add(response.AsRequestMessage());
