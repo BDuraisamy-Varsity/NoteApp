@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NoteApp.Domain.Entities;
 using NoteApp.Domain.Interfaces;
-using NoteApp.Infrastructure.Security;
 
 namespace NoteApp.Infrastructure.Data.Repositories;
 
@@ -70,11 +69,47 @@ public class NoteRepository : INoteRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Note note, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(
+        Note note,
+        List<string> tags,
+        List<TodoItemUpdate> todoItems,
+        CancellationToken cancellationToken = default)
     {
-        // Note was loaded via GetByIdAsync in the same DbContext scope, so it is
-        // already tracked. Calling Update() would re-mark all child entities as
-        // Modified and conflict with the change tracker, causing concurrency errors.
+        // ── Step 1: Save scalar note changes (Title, Body, Flag, UpdatedAt) ───
+        // Note is already tracked from GetByIdAsync — SaveChanges picks up changes.
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // ── Step 2: Bulk-delete old children directly, bypassing the change
+        // tracker to avoid DbUpdateConcurrencyException. ──────────────────────
+        await _context.TodoItems
+            .Where(t => t.NoteId == note.Id)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        await _context.NoteTags
+            .Where(nt => nt.NoteId == note.Id)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        // ── Step 3: Insert new TodoItems ──────────────────────────────────────
+        var newTodos = todoItems.Select(t => new TodoItem
+        {
+            Id          = t.Id == Guid.Empty ? Guid.NewGuid() : t.Id,
+            Text        = t.Text,
+            IsCompleted = t.IsCompleted,
+            Order       = t.Order,
+            NoteId      = note.Id,
+        }).ToList();
+        await _context.TodoItems.AddRangeAsync(newTodos, cancellationToken);
+
+        // ── Step 4: Resolve tags (find existing by name, create if new) ───────
+        foreach (var tagName in tags.Where(t => !string.IsNullOrWhiteSpace(t)))
+        {
+            var name = tagName.Trim().ToLowerInvariant();
+            var tag = await _context.Tags.FirstOrDefaultAsync(t => t.Name == name, cancellationToken)
+                      ?? new Tag { Name = name };
+
+            _context.NoteTags.Add(new NoteTag { NoteId = note.Id, Tag = tag });
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
     }
 

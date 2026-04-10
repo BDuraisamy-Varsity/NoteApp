@@ -4,6 +4,7 @@ using Anthropic;
 using NoteApp.Application.DTOs;
 using NoteApp.Domain.Entities;
 using NoteApp.Domain.Interfaces;
+using NoteApp.Domain.Interfaces;
 
 namespace NoteApp.Infrastructure.AI;
 
@@ -125,10 +126,17 @@ public class NoteAgentToolsService : INoteAgentTools
         if (!string.IsNullOrWhiteSpace(title)) note.Title = title;
         if (!string.IsNullOrWhiteSpace(body))  note.Body  = body;
         if (!string.IsNullOrWhiteSpace(flag))  note.Flag  = ParseFlag(flag);
-        if (!string.IsNullOrWhiteSpace(tags))  ApplyTags(note, tags);
-
         note.UpdatedAt = DateTime.UtcNow;
-        await _repository.UpdateAsync(note, cancellationToken);
+
+        var newTags = string.IsNullOrWhiteSpace(tags)
+            ? note.NoteTags.Select(nt => nt.Tag?.Name ?? "").Where(t => t.Length > 0).ToList()
+            : tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+        var existingTodos = note.TodoItems
+            .Select(t => new TodoItemUpdate(t.Id, t.Text, t.IsCompleted, t.Order))
+            .ToList();
+
+        await _repository.UpdateAsync(note, newTags, existingTodos, cancellationToken);
 
         Actions.Add($"updated note '{note.Title}'");
         NotesAffected++;
