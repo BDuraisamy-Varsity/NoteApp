@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
+using Microsoft.EntityFrameworkCore;
 using NoteApp.API.Configuration;
 using NoteApp.API.Middleware;
 using NoteApp.Infrastructure.DependencyInjection;
