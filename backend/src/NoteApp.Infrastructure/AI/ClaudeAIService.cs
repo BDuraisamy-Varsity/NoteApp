@@ -10,9 +10,8 @@ public class ClaudeAIService : IClaudeAIService
     private readonly ILogger<ClaudeAIService> _logger;
     private readonly INoteRepository _noteRepository;
 
-    // claude-opus-4-6 is the latest model but not in the SDK enum —
-    // CreateMessageRequestModel supports implicit string conversion.
-    private const string Model = "claude-opus-4-6";
+    // us.anthropic.claude-sonnet-4-6 routed via Portkey → AWS Bedrock us-east-2
+    private const string Model = "us.anthropic.claude-sonnet-4-6";
 
     private const string SystemPromptAgent = """
         You are a helpful note-taking assistant with access to the user's notes.
@@ -43,6 +42,7 @@ public class ClaudeAIService : IClaudeAIService
             model: Model,
             messages: [prompt],
             maxTokens: 256,
+            topP: null,
             cancellationToken: cancellationToken);
 
         var raw = ExtractText(response).Trim();
@@ -76,6 +76,7 @@ public class ClaudeAIService : IClaudeAIService
             model: Model,
             messages: [prompt],
             maxTokens: 256,
+            topP: null,
             cancellationToken: cancellationToken);
 
         var summary = ExtractText(response).Trim();
@@ -104,6 +105,7 @@ public class ClaudeAIService : IClaudeAIService
                 system: SystemPromptAgent,
                 toolChoice: new ToolChoice { Type = ToolChoiceType.Auto },
                 tools: tools,
+                topP: null,
                 cancellationToken: cancellationToken);
 
             messages.Add(response.AsRequestMessage());
@@ -138,11 +140,12 @@ public class ClaudeAIService : IClaudeAIService
 
     private static AnthropicApi BuildClient()
     {
-        var api = new AnthropicApi();
-        var apiKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY") ?? string.Empty;
-        api.AuthorizeUsingApiKey(apiKey);
-        api.SetHeaders();
-        return api;
+        var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.Add("x-portkey-api-key", "QpTVFFwhjnUnMA1m1r755TpnIwle");
+        httpClient.DefaultRequestHeaders.Add("x-portkey-provider", "@aws-bedrock-use2");
+
+        var baseUri = new Uri("https://portkeygateway.perficient.com/v1");
+        return new AnthropicApi(httpClient, baseUri);
     }
 
     private static string ExtractText(Message response)
