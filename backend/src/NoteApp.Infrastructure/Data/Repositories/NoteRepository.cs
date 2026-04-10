@@ -72,7 +72,9 @@ public class NoteRepository : INoteRepository
 
     public async Task UpdateAsync(Note note, CancellationToken cancellationToken = default)
     {
-        _context.Notes.Update(note);
+        // Note was loaded via GetByIdAsync in the same DbContext scope, so it is
+        // already tracked. Calling Update() would re-mark all child entities as
+        // Modified and conflict with the change tracker, causing concurrency errors.
         await _context.SaveChangesAsync(cancellationToken);
     }
 

@@ -42,20 +42,32 @@ public class UpdateNoteCommandHandler : IRequestHandler<UpdateNoteCommand, NoteD
         note.Body = request.Body;
         note.Flag = request.Flag;
         note.UpdatedAt = DateTime.UtcNow;
-        note.NoteTags = request.Tags
-            .Where(t => !string.IsNullOrWhiteSpace(t))
-            .Select(t => new NoteTag
+
+        // Mutate tracked collections in-place so EF Core's change tracker
+        // correctly issues DELETEs for removed items and INSERTs for new ones.
+        // Replacing the collection reference causes DbUpdateConcurrencyException.
+        note.NoteTags.Clear();
+        foreach (var tag in request.Tags.Where(t => !string.IsNullOrWhiteSpace(t)))
+        {
+            note.NoteTags.Add(new NoteTag
             {
                 NoteId = note.Id,
-                Tag = new Tag { Name = t.Trim().ToLowerInvariant() }
-            }).ToList();
-        note.TodoItems = request.TodoItems.Select((t, i) => new TodoItem
+                Tag = new Tag { Name = tag.Trim().ToLowerInvariant() },
+            });
+        }
+
+        note.TodoItems.Clear();
+        for (int i = 0; i < request.TodoItems.Count; i++)
         {
-            Id = t.Id == Guid.Empty ? Guid.NewGuid() : t.Id,
-            Text = t.Text,
-            IsCompleted = t.IsCompleted,
-            Order = i,
-            NoteId = note.Id
-        }).ToList();
+            var t = request.TodoItems[i];
+            note.TodoItems.Add(new TodoItem
+            {
+                Id = t.Id == Guid.Empty ? Guid.NewGuid() : t.Id,
+                Text = t.Text,
+                IsCompleted = t.IsCompleted,
+                Order = i,
+                NoteId = note.Id,
+            });
+        }
     }
 }
