@@ -140,12 +140,41 @@ public class ClaudeAIService : IClaudeAIService
 
     private static AnthropicApi BuildClient()
     {
-        var httpClient = new HttpClient();
+        var httpClient = new HttpClient(new StripTopPHandler());
         httpClient.DefaultRequestHeaders.Add("x-portkey-api-key", "QpTVFFwhjnUnMA1m1r755TpnIwle");
         httpClient.DefaultRequestHeaders.Add("x-portkey-provider", "@aws-bedrock-use2");
 
         var baseUri = new Uri("https://portkeygateway.perficient.com/v1");
         return new AnthropicApi(httpClient, baseUri);
+    }
+
+    /// <summary>
+    /// Removes "top_p" from the JSON request body before it reaches Bedrock.
+    /// Bedrock rejects requests where both temperature and top_p are present,
+    /// and the SDK always serializes top_p even when it's the default 0.0.
+    /// </summary>
+    private sealed class StripTopPHandler : DelegatingHandler
+    {
+        public StripTopPHandler() : base(new HttpClientHandler()) { }
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            if (request.Content is not null)
+            {
+                var body = await request.Content.ReadAsStringAsync(cancellationToken);
+                if (body.Contains("top_p"))
+                {
+                    var node = System.Text.Json.Nodes.JsonNode.Parse(body);
+                    node?.AsObject().Remove("top_p");
+                    request.Content = new StringContent(
+                        node?.ToJsonString() ?? body,
+                        System.Text.Encoding.UTF8,
+                        "application/json");
+                }
+            }
+            return await base.SendAsync(request, cancellationToken);
+        }
     }
 
     private static string ExtractText(Message response)
