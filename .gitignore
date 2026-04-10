@@ -1,0 +1,52 @@
+# ── .NET / C# ──────────────────────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.db
+*.db-shm
+*.db-wal
+logs/
+coverage/
+TestResults/
+*.trx
+*.cobertura.xml
+
+# ── Node / React Native ────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.expo/
+.expo-shared/
+web-build/
+
+# ── React Native specific ──────────────────────────────────────────────────
+frontend/NoteAppMobile/android/app/build/
+frontend/NoteAppMobile/android/build/
+frontend/NoteAppMobile/android/.gradle/
+frontend/NoteAppMobile/android/local.properties
+frontend/NoteAppMobile/ios/build/
+frontend/NoteAppMobile/ios/Pods/
+frontend/NoteAppMobile/ios/.xcode.env.local
+frontend/NoteAppMobile/.bundle/
+
+# ── Environment / Secrets ──────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+appsettings.Production.json
+secrets.json
+
+# ── OS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE ────────────────────────────────────────────────────────────────────
+.idea/
+*.swp
+*.swo

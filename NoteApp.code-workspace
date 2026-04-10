@@ -1,0 +1,177 @@
+{
+  "folders": [
+    {
+      "name": "🖥  Backend — NoteApp.API (ASP.NET Core 10)",
+      "path": "./backend"
+    },
+    {
+      "name": "📱 Frontend — NoteAppMobile (React Native)",
+      "path": "./frontend/NoteAppMobile"
+    },
+    {
+      "name": "📋 Root",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": null,
+    "[csharp]": {
+      "editor.defaultFormatter": "ms-dotnettools.csharp"
+    },
+    "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "dotnet.defaultSolution": "backend/NoteApp.sln",
+    "files.exclude": {
+      "**/bin": true,
+      "**/obj": true,
+      "**/node_modules": true,
+      "**/.git": false
+    },
+    "search.exclude": {
+      "**/bin": true,
+      "**/obj": true,
+      "**/node_modules": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-dotnettools.csdevkit",
+      "ms-dotnettools.csharp",
+      "ms-dotnettools.vscode-dotnet-runtime",
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+      "msjsdiag.vscode-react-native",
+      "humao.rest-client",
+      "eamodio.gitlens"
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "🖥  Launch Backend API (http :5000 / https :5001)",
+        "type": "dotnet",
+        "request": "launch",
+        "projectPath": "${workspaceFolder[0]}/src/NoteApp.API/NoteApp.API.csproj",
+        "env": {
+          "ASPNETCORE_ENVIRONMENT": "Development",
+          "ASPNETCORE_URLS": "https://localhost:5001;http://localhost:5000"
+        }
+      },
+      {
+        "name": "📱 Launch React Native — Android (Metro :8081)",
+        "type": "reactnative",
+        "request": "launch",
+        "platform": "android",
+        "cwd": "${workspaceFolder[1]}",
+        "env": {
+          "RCT_METRO_PORT": "8081"
+        }
+      },
+      {
+        "name": "📱 Launch React Native — iOS (Metro :8081)",
+        "type": "reactnative",
+        "request": "launch",
+        "platform": "ios",
+        "cwd": "${workspaceFolder[1]}",
+        "env": {
+          "RCT_METRO_PORT": "8081"
+        }
+      }
+    ],
+    "compounds": [
+      {
+        "name": "🚀 Launch Full Stack (Backend + Metro)",
+        "configurations": [
+          "🖥  Launch Backend API (http :5000 / https :5001)",
+          "📱 Launch React Native — Android (Metro :8081)"
+        ]
+      }
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "backend: build",
+        "type": "shell",
+        "command": "dotnet build NoteApp.sln",
+        "options": {"cwd": "${workspaceFolder[0]}"},
+        "group": "build",
+        "presentation": {"reveal": "always", "panel": "shared"},
+        "problemMatcher": "$msCompile"
+      },
+      {
+        "label": "backend: test",
+        "type": "shell",
+        "command": "dotnet test NoteApp.sln --logger trx --collect:\"XPlat Code Coverage\"",
+        "options": {"cwd": "${workspaceFolder[0]}"},
+        "group": "test",
+        "presentation": {"reveal": "always", "panel": "shared"},
+        "problemMatcher": "$msCompile"
+      },
+      {
+        "label": "backend: run API (http:5000 / https:5001)",
+        "type": "shell",
+        "command": "dotnet run --project src/NoteApp.API/NoteApp.API.csproj --launch-profile https",
+        "options": {"cwd": "${workspaceFolder[0]}"},
+        "isBackground": true,
+        "presentation": {"reveal": "always", "panel": "dedicated"},
+        "problemMatcher": {
+          "pattern": {"regexp": ".", "file": 1, "location": 2, "message": 3},
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": "Building...",
+            "endsPattern": "Application started"
+          }
+        }
+      },
+      {
+        "label": "backend: add migration",
+        "type": "shell",
+        "command": "dotnet ef migrations add ${input:migrationName} --project src/NoteApp.Infrastructure/NoteApp.Infrastructure.csproj --startup-project src/NoteApp.API/NoteApp.API.csproj",
+        "options": {"cwd": "${workspaceFolder[0]}"},
+        "presentation": {"reveal": "always", "panel": "shared"},
+        "problemMatcher": []
+      },
+      {
+        "label": "frontend: install deps",
+        "type": "shell",
+        "command": "npm install",
+        "options": {"cwd": "${workspaceFolder[1]}"},
+        "group": "build",
+        "presentation": {"reveal": "always", "panel": "shared"}
+      },
+      {
+        "label": "frontend: start Metro (:8081)",
+        "type": "shell",
+        "command": "npx react-native start --port 8081",
+        "options": {"cwd": "${workspaceFolder[1]}"},
+        "isBackground": true,
+        "presentation": {"reveal": "always", "panel": "dedicated"},
+        "problemMatcher": []
+      },
+      {
+        "label": "frontend: test",
+        "type": "shell",
+        "command": "npm test -- --watchAll=false",
+        "options": {"cwd": "${workspaceFolder[1]}"},
+        "group": "test",
+        "presentation": {"reveal": "always", "panel": "shared"}
+      }
+    ],
+    "inputs": [
+      {
+        "id": "migrationName",
+        "type": "promptString",
+        "description": "Migration name (e.g. AddTagsToNotes_20250110)",
+        "default": "Migration_"
+      }
+    ]
+  }
+}
