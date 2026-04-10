@@ -4,11 +4,12 @@
     // ── Backend — auto-opens Swagger in browser when ready ────────────────
     {
       "name": "🖥  Backend API (Swagger auto-opens)",
-      "type": "dotnet",
+      "type": "coreclr",
       "request": "launch",
-      "cwd": "${workspaceFolder}/backend",
-      "projectPath": "${workspaceFolder}/backend/src/NoteApp.API/NoteApp.API.csproj",
-      "launchSettingsProfile": "https",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/backend/src/NoteApp.API/bin/Debug/net10.0/NoteApp.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend/src/NoteApp.API",
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_URLS": "https://localhost:5001;http://localhost:5000"
@@ -40,14 +41,23 @@
       "preLaunchTask": "frontend: start Metro"
     },
 
-    // ── Metro only — just start bundler, attach device separately ─────────
+    // ── Web browser (react-native-web via webpack) ────────────────────────
     {
-      "name": "📱 Start Metro Only (:8081)",
-      "type": "reactnative",
+      "name": "🌐 Frontend — Web Browser (:3000)",
+      "type": "chrome",
       "request": "launch",
-      "platform": "metro",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/frontend/NoteAppMobile",
+      "preLaunchTask": "frontend: start web"
+    },
+
+    // ── Metro only — attach to already-running Metro bundler ──────────────
+    {
+      "name": "📱 Attach to Metro (:8081)",
+      "type": "reactnative",
+      "request": "attach",
       "cwd": "${workspaceFolder}/frontend/NoteAppMobile",
-      "env": { "RCT_METRO_PORT": "8081" }
+      "port": 8081
     }
   ],
 
@@ -57,7 +67,7 @@
       "name": "🚀 Full Stack — Backend (Swagger) + Metro",
       "configurations": [
         "🖥  Backend API (Swagger auto-opens)",
-        "📱 Start Metro Only (:8081)"
+        "📱 Frontend — Android"
       ],
       "stopAll": true,
       "presentation": {
@@ -73,6 +83,19 @@
         "📱 Frontend — Android"
       ],
       "stopAll": true
+    },
+    {
+      "name": "🚀 Full Stack — Backend + Web Browser",
+      "configurations": [
+        "🖥  Backend API (Swagger auto-opens)",
+        "🌐 Frontend — Web Browser (:3000)"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "",
+        "order": 2
+      }
     }
   ]
 }

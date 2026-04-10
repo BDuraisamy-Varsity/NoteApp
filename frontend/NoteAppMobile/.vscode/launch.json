@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "📱 Run Android",
+      "request": "launch",
+      "type": "reactnative",
+      "platform": "android",
+      "cwd": "${workspaceFolder}",
+      "env": { "RCT_METRO_PORT": "8081" }
+    },
+    {
+      "name": "📱 Run iOS",
+      "request": "launch",
+      "type": "reactnative",
+      "platform": "ios",
+      "cwd": "${workspaceFolder}",
+      "env": { "RCT_METRO_PORT": "8081" }
+    },
+    {
+      "name": "📱 Attach to Metro",
+      "request": "attach",
+      "type": "reactnative",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
