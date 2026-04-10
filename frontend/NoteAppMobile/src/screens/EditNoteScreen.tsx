@@ -106,7 +106,11 @@ export default function EditNoteScreen({note, onSave, onCancel, onDelete}: EditN
           body: body.trim(),
           flag,
           tags: note.tags,
-          todoItems,
+          todoItems: todoItems.map((t, idx) => ({
+            ...t,
+            id: t.id.startsWith('temp-') ? '00000000-0000-0000-0000-000000000000' : t.id,
+            order: idx,
+          })),
         };
         saved = await notesApi.update(note.id, req);
       } else {
