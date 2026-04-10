@@ -25,6 +25,7 @@ interface HomeScreenProps {
   onEditPress:    (note: NoteDto) => void;
   onDeletePress:  (note: NoteDto) => void;
   onSettingsPress: () => void;
+  onAgentPress:   () => void;
 }
 
 const THEME_OPTS: {mode: ThemeMode; icon: string; label: string}[] = [
@@ -47,7 +48,7 @@ function greeting(): string {
   return 'Good evening 🌙';
 }
 
-export default function HomeScreen({onNotePress, onCreatePress, onEditPress, onDeletePress, onSettingsPress}: HomeScreenProps) {
+export default function HomeScreen({onNotePress, onCreatePress, onEditPress, onDeletePress, onSettingsPress, onAgentPress}: HomeScreenProps) {
   const {colors, themeMode, setTheme, isDark} = useTheme();
   const {typography, fontSizeLevel, setFontSizeLevel} = useAccessibility();
   const {flagConfigs} = useFlagContext();
@@ -188,6 +189,9 @@ export default function HomeScreen({onNotePress, onCreatePress, onEditPress, onD
         <View style={{flex: 1}} />
         <TouchableOpacity style={s.settingsBtn} onPress={onSettingsPress} accessibilityRole="button" accessibilityLabel="Flag settings">
           <Text style={s.settingsBtnIcon}>🏷️</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={s.settingsBtn} onPress={onAgentPress} accessibilityRole="button" accessibilityLabel="AI Assistant">
+          <Text style={s.settingsBtnIcon}>🤖</Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.newBtn} onPress={onCreatePress} accessibilityRole="button" accessibilityLabel="New note">
           <Text style={s.newBtnText}>+ New</Text>

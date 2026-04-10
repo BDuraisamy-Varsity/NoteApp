@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using NoteApp.Application.AI;
 using NoteApp.Domain.Interfaces;
+using NoteApp.Infrastructure.AI;
 using NoteApp.Infrastructure.Data;
 using NoteApp.Infrastructure.Data.Repositories;
 using NoteApp.Infrastructure.Security;
@@ -20,6 +22,7 @@ public static class InfrastructureServiceExtensions
 
         services.AddScoped<INoteRepository, NoteRepository>();
         services.AddSingleton<IPiiEncryptionService, PiiEncryptionService>();
+        services.AddScoped<IClaudeAIService, ClaudeAIService>();
 
         return services;
     }

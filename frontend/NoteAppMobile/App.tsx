@@ -4,12 +4,13 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {AccessibilityProvider} from './src/contexts/AccessibilityContext';
 import {ThemeProvider, useTheme} from './src/contexts/ThemeContext';
 import {FlagProvider} from './src/contexts/FlagContext';
+import AgentScreen from './src/screens/AgentScreen';
 import EditNoteScreen from './src/screens/EditNoteScreen';
 import FlagsSettingsScreen from './src/screens/FlagsSettingsScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import {NoteDto} from './src/services/api';
 
-type Screen = 'home' | 'create' | 'edit' | 'settings';
+type Screen = 'home' | 'create' | 'edit' | 'settings' | 'agent';
 
 export default function App() {
   return (
@@ -47,6 +48,15 @@ function Shell() {
     );
   }
 
+  if (screen === 'agent') {
+    return (
+      <>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.headerBackground} />
+        <AgentScreen onBack={goHome} />
+      </>
+    );
+  }
+
   if (screen === 'create' || screen === 'edit') {
     return (
       <>
@@ -71,6 +81,7 @@ function Shell() {
         onEditPress={note => { setEditingNote(note); setScreen('edit'); }}
         onDeletePress={note => { setEditingNote(note); setScreen('edit'); }}
         onSettingsPress={() => setScreen('settings')}
+        onAgentPress={() => setScreen('agent')}
       />
     </>
   );

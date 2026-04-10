@@ -11,7 +11,7 @@ import {
 import {useAccessibility} from '../contexts/AccessibilityContext';
 import {useFlagContext} from '../contexts/FlagContext';
 import {useTheme} from '../contexts/ThemeContext';
-import {CreateNoteRequest, FlagLevel, NoteDto, UpdateNoteRequest, notesApi} from '../services/api';
+import {CreateNoteRequest, FlagLevel, NoteDto, TodoItemDto, UpdateNoteRequest, aiApi, notesApi} from '../services/api';
 import {borderRadius, MIN_TOUCH_TARGET, spacing} from '../theme/spacing';
 import {FLAG_ORDER, getFlagConfig, autoDetectFlag} from '../theme/flags';
 
@@ -31,12 +31,67 @@ export default function EditNoteScreen({note, onSave, onCancel, onDelete}: EditN
   const [title, setTitle] = useState(note?.title ?? '');
   const [body, setBody] = useState(note?.body ?? '');
   const [flag, setFlag] = useState<FlagLevel>(note?.flag ?? 'None');
+  const [todoItems, setTodoItems] = useState<TodoItemDto[]>(note?.todoItems ?? []);
+  const [newTodoText, setNewTodoText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState<'tags' | 'summary' | null>(null);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
 
   const canSave = title.trim().length > 0 && !isSaving;
   const isDirty = title !== (note?.title ?? '') || body !== (note?.body ?? '');
+
+  const handleAiSuggestTags = async () => {
+    if (!title.trim()) { return; }
+    setAiLoading('tags');
+    setError(null);
+    try {
+      const suggested = await aiApi.suggestTags(title, body);
+      // navigate to edit screen is already open; just show as info for now
+      setAiSummary(`Suggested tags: ${suggested.join(', ')}`);
+    } catch {
+      setError('AI tag suggestion failed.');
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  const handleAiSummarize = async () => {
+    if (!title.trim()) { return; }
+    setAiLoading('summary');
+    setError(null);
+    try {
+      const summary = await aiApi.summarize(title, body);
+      setAiSummary(summary);
+    } catch {
+      setError('AI summarization failed.');
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  const addTodoItem = () => {
+    if (!newTodoText.trim()) { return; }
+    const item: TodoItemDto = {
+      id: `temp-${Date.now()}`,
+      text: newTodoText.trim(),
+      isCompleted: false,
+      order: todoItems.length,
+    };
+    setTodoItems(prev => [...prev, item]);
+    setNewTodoText('');
+  };
+
+  const toggleTodoItem = (id: string) => {
+    setTodoItems(prev =>
+      prev.map(t => t.id === id ? {...t, isCompleted: !t.isCompleted} : t),
+    );
+  };
+
+  const deleteTodoItem = (id: string) => {
+    setTodoItems(prev => prev.filter(t => t.id !== id));
+  };
 
   const handleSave = async () => {
     if (!canSave) { return; }
@@ -51,7 +106,7 @@ export default function EditNoteScreen({note, onSave, onCancel, onDelete}: EditN
           body: body.trim(),
           flag,
           tags: note.tags,
-          todoItems: note.todoItems,
+          todoItems,
         };
         saved = await notesApi.update(note.id, req);
       } else {
@@ -196,6 +251,89 @@ export default function EditNoteScreen({note, onSave, onCancel, onDelete}: EditN
             multiline
             textAlignVertical="top"
           />
+
+          <View style={styles.divider} />
+
+          {/* AI actions */}
+          <View style={styles.aiRow}>
+            <TouchableOpacity
+              style={styles.aiBtn}
+              onPress={handleAiSuggestTags}
+              disabled={!!aiLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Suggest tags with AI">
+              {aiLoading === 'tags'
+                ? <ActivityIndicator size="small" color={colors.primary} />
+                : <Text style={styles.aiBtnText}>✨ Suggest Tags</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.aiBtn}
+              onPress={handleAiSummarize}
+              disabled={!!aiLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Summarize note with AI">
+              {aiLoading === 'summary'
+                ? <ActivityIndicator size="small" color={colors.primary} />
+                : <Text style={styles.aiBtnText}>📝 Summarize</Text>}
+            </TouchableOpacity>
+          </View>
+
+          {aiSummary && (
+            <View style={styles.aiResult}>
+              <Text style={styles.aiResultText}>{aiSummary}</Text>
+              <TouchableOpacity onPress={() => setAiSummary(null)} accessibilityLabel="Dismiss AI result">
+                <Text style={styles.aiResultDismiss}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
+        {/* To-Do list */}
+        <View style={[styles.formCard, {marginTop: 0}]}>
+          <Text style={styles.sectionLabel}>TO-DO LIST</Text>
+
+          {todoItems.map(item => (
+            <View key={item.id} style={styles.todoRow}>
+              <TouchableOpacity
+                onPress={() => toggleTodoItem(item.id)}
+                accessibilityRole="checkbox"
+                accessibilityState={{checked: item.isCompleted}}
+                style={styles.todoCheck}>
+                <Text style={styles.todoCheckIcon}>{item.isCompleted ? '☑' : '☐'}</Text>
+              </TouchableOpacity>
+              <Text style={[styles.todoText, item.isCompleted && styles.todoTextDone]}>
+                {item.text}
+              </Text>
+              <TouchableOpacity
+                onPress={() => deleteTodoItem(item.id)}
+                accessibilityRole="button"
+                accessibilityLabel={`Delete todo: ${item.text}`}
+                style={styles.todoDelete}>
+                <Text style={styles.todoDeleteIcon}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+
+          <View style={styles.todoInputRow}>
+            <TextInput
+              style={styles.todoInput}
+              placeholder="Add to-do item…"
+              placeholderTextColor={colors.textDisabled}
+              value={newTodoText}
+              onChangeText={setNewTodoText}
+              onSubmitEditing={addTodoItem}
+              returnKeyType="done"
+              accessibilityLabel="New to-do item"
+            />
+            <TouchableOpacity
+              style={styles.todoAddBtn}
+              onPress={addTodoItem}
+              disabled={!newTodoText.trim()}
+              accessibilityRole="button"
+              accessibilityLabel="Add to-do item">
+              <Text style={styles.todoAddBtnText}>+</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Metadata row for edit mode */}
@@ -364,6 +502,126 @@ function buildStyles(
       lineHeight: typography.md * 1.7,
       minHeight: 240,
       paddingVertical: spacing.sm,
+    },
+
+    // AI actions
+    aiRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    aiBtn: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: borderRadius.xl,
+      paddingVertical: spacing.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 36,
+    },
+    aiBtnText: {
+      fontSize: typography.sm,
+      color: colors.primary,
+      fontWeight: '600',
+    },
+    aiResult: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.primaryLight,
+      borderRadius: borderRadius.md,
+      padding: spacing.sm,
+      marginTop: spacing.sm,
+      gap: spacing.sm,
+    },
+    aiResultText: {
+      flex: 1,
+      fontSize: typography.sm,
+      color: colors.textPrimary,
+      lineHeight: typography.sm * 1.5,
+    },
+    aiResultDismiss: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontWeight: '700',
+    },
+
+    // Section label
+    sectionLabel: {
+      fontSize: typography.xs,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      textTransform: 'uppercase' as const,
+      letterSpacing: 0.5,
+      marginBottom: spacing.sm,
+    },
+
+    // To-do list
+    todoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: spacing.xs,
+      gap: spacing.sm,
+    },
+    todoCheck: {
+      width: MIN_TOUCH_TARGET,
+      height: MIN_TOUCH_TARGET,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    todoCheckIcon: {
+      fontSize: 20,
+      color: colors.primary,
+    },
+    todoText: {
+      flex: 1,
+      fontSize: typography.md,
+      color: colors.textPrimary,
+    },
+    todoTextDone: {
+      textDecorationLine: 'line-through' as const,
+      color: colors.textDisabled,
+    },
+    todoDelete: {
+      width: MIN_TOUCH_TARGET,
+      height: MIN_TOUCH_TARGET,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    todoDeleteIcon: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    todoInputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    todoInput: {
+      flex: 1,
+      fontSize: typography.md,
+      color: colors.textPrimary,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      minHeight: MIN_TOUCH_TARGET,
+    },
+    todoAddBtn: {
+      width: MIN_TOUCH_TARGET,
+      height: MIN_TOUCH_TARGET,
+      backgroundColor: colors.primary,
+      borderRadius: borderRadius.full,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    todoAddBtnText: {
+      fontSize: 22,
+      color: colors.textOnPrimary,
+      fontWeight: '700',
+      lineHeight: 26,
     },
 
     // Flag selector

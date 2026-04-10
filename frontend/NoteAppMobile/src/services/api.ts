@@ -137,3 +137,42 @@ export const notesApi = {
     return res.text();
   },
 };
+
+// ── AI API ────────────────────────────────────────────────────────────────────
+
+export interface AgentResponse {
+  message: string;
+  notesAffected: number;
+  actions: string[];
+}
+
+export const aiApi = {
+  suggestTags: async (title: string, body: string): Promise<string[]> => {
+    const res = await fetch(`${BASE_URL}/ai/suggest-tags`, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify({title, body}),
+    });
+    const data = await handleResponse<{tags: string[]}>(res);
+    return data.tags;
+  },
+
+  summarize: async (title: string, body: string): Promise<string> => {
+    const res = await fetch(`${BASE_URL}/ai/summarize`, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify({title, body}),
+    });
+    const data = await handleResponse<{summary: string}>(res);
+    return data.summary;
+  },
+
+  chat: async (message: string): Promise<AgentResponse> => {
+    const res = await fetch(`${BASE_URL}/ai/agent`, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify({message}),
+    });
+    return handleResponse<AgentResponse>(res);
+  },
+};
